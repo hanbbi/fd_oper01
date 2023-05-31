@@ -1,0 +1,47 @@
+firedogs:
+   app-title: Smart GasTok-www
+
+spring:
+   application:
+      version: 2.0
+      name: GasTok Web
+   datasource:
+      url: jdbc:log4jdbc:mysql://183.111.115.116:5264/gastok?serverTimezone=UTC&characterEncoding=UTF-8&allowMultiQueries=true&useUnicode=yes
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      hikari:
+         username: gtok_user
+         password: firedogs2102@#$
+         connectionTimeout: 30000
+         validation-timeout: 1000
+         maximumPoolSize: 5
+         maxLifeTime: 1800000 
+         poolName: HikariCP
+         readOnly: false
+         #connectionTestQuery: SELECT 1      
+
+   jmx:
+      enabled: true
+   
+   mvc:
+      view:
+         prefix: /WEB-INF/views/
+         suffix: .jsp
+         static-path-patten: /resources/**
+  
+   servlet:
+      multipart:
+         maxFileSize: 5MB
+         maxRequestSize: 5MB
+       
+server:
+   port: 8080
+   max-http-header-size: 20480
+   session:
+      timeout: 1800
+   tomcat:
+      mbeanregistry:
+         enabled: true         
+  
+mybatis:
+   mapper-locations:
+   - classpath:mapper/**/*.xml  

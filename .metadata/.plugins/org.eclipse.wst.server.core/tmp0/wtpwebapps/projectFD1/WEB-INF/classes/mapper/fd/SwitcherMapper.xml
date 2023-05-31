@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.fd.mapper.SwitcherMapper">
+	<resultMap id="switcherMap" type="SwitcherVO" autoMapping="true">
+		<id column="comp_id" property="compId"/>
+		<id column="device_id" property="deviceId"/>
+		<id column="adc_port" property="adcPort"/>
+		<result column="cust_id" property="custId"/>
+		<result column="reg_date" property="regDate"/>
+	</resultMap>
+	
+	<select id="switcherStock" resultType="HashMap">
+		SELECT 
+			case
+				when (s.volume = '' or s.volume = ' ') then '미등록'
+				else s.volume
+			end AS volume,
+			IFNULL(COUNT(case
+				when (s.adc_port = '1' AND h.di1_info = '0') OR (s.adc_port = '2' AND h.di2_info = '0') then s.device_id
+			END), '0') AS zeroCnt,
+			IFNULL(COUNT(case
+				when (s.adc_port = '1' AND h.di1_info = '1') OR (s.adc_port = '2' AND h.di2_info = '1') then s.device_id
+			END), '0') AS fillCnt,
+			IFNULL(COUNT(s.device_id), '0') AS allCnt
+		FROM fd_device d
+			JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+			JOIN fd_info_switcher s ON d.comp_id = s.comp_id AND d.device_id = s.device_id AND s.isDel = '0'
+			JOIN fd_tran_tank_history_lst h ON s.device_id = h.device_id
+		WHERE c.comp_id IN (${gcomp_id})
+		GROUP BY s.volume;
+	</select>
+	
+	<select id="switcherDaily" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%m월%d일') AS tranDt,
+			IFNULL(COUNT(e.device_id), '0') AS chgCnt
+		FROM fd_sys_calendar a
+			LEFT JOIN fd_extr_tank e ON e.tran_dt = a.calendar_dt AND e.tran_type = 'S' AND e.isCharge = '1' AND e.comp_id IN (${gcomp_id})
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m-%d') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 DAY, '%y-%m-%d') AND DATE_FORMAT(NOW() - INTERVAL 1 DAY, '%y-%m-%d')
+		GROUP BY DATE_FORMAT(a.calendar_dt, '%y-%m-%d');
+	</select>
+	
+	<select id="switcherMonthly" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%y년%m월') AS tranDt,
+			IFNULL(COUNT(e.device_id), '0') AS chgCnt
+		FROM fd_sys_calendar a
+			LEFT JOIN fd_extr_tank e ON e.tran_dt = a.calendar_dt AND e.tran_type = 'S' AND e.isCharge = '1' AND e.comp_id IN (${gcomp_id})
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%y-%m') AND DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%y-%m')
+		GROUP BY DATE_FORMAT(a.calendar_dt, '%y-%m');
+	</select>
+	
+	<select id="switcherError" resultType="HashMap">
+		SELECT
+			ss.stype AS stype,
+			COUNT(ss.stype) AS cnt
+		FROM (
+			SELECT 
+				case
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30) then '배터리점검'
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW()) then '통신점검'
+				END AS stype
+			FROM fd_device d
+				JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+				JOIN fd_info_switcher s ON s.comp_id = d.comp_id AND s.device_id = d.device_id AND s.isDel = '0'
+				JOIN fd_tran_tank_history_lst h ON h.comp_id = s.comp_id AND h.device_id = s.device_id AND h.tran_type = 'S'
+			WHERE c.root_id = #{comp_id}
+			) ss
+		WHERE ss.stype IS NOT NULL
+		GROUP BY ss.stype;
+	</select>
+	
+	<select id="switcherErrorB" resultType="HashMap">
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			case 
+				when (s.adc_port = '1' AND h.di1_info = '0') OR (s.adc_port = '2' AND h.di2_info = '0') then '절체'
+				else '정상'
+			end as status,
+			h.battery_percent AS battery
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_switcher s ON s.comp_id = cum.comp_id AND s.cust_id = cum.cust_id AND s.isDel = '0'
+			JOIN fd_tran_tank_history_lst h ON h.device_id = d.device_id AND h.tran_type = 'S'
+		WHERE c.root_id = #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30
+		GROUP BY s.device_id;
+	</select>
+	
+	<select id="switcherErrorT" resultType="HashMap">
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			case 
+				when (s.adc_port = '1' AND h.di1_info = '0') OR (s.adc_port = '2' AND h.di2_info = '0') then '절체'
+				else '정상'
+			end as status,
+			h.battery_percent AS battery
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_switcher s ON s.comp_id = cum.comp_id AND s.cust_id = cum.cust_id AND s.isDel = '0'
+			JOIN fd_tran_tank_history_lst h ON h.device_id = d.device_id AND h.tran_type = 'S'
+		WHERE c.root_id = #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent >= 30
+		GROUP BY s.device_id;
+	</select>
+</mapper>

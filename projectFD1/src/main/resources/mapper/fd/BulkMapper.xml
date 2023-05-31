@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.fd.mapper.BulkMapper">
+	<resultMap id="BulkMap" type="BulkVO" autoMapping="true">
+		<id column="comp_id" property="compId"/>
+		<id column="device_id" property="deviceId"/>
+		<id column="bulk_id" property="bulkId"/>
+		<id column="capa_type" property="capaType"/>
+		<result column="bulk_name" property="bulkName"/>
+	</resultMap>
+	
+	<select id="bulkDailyKg" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%m월%d일') AS tranDt,
+			IFNULL(COUNT(z.tran_dttm), 0) AS cnt, 
+			IFNULL(ROUND(SUM(case
+				when z.capa_type = 'SBKU0001' then (z.net_volume_total + z.correct_value)
+				when z.capa_type = 'SBKU0002' then ((z.net_volume_total + z.correct_value) * z.conversion)
+				ELSE (z.net_volume_total + z.correct_value)
+			END)), 0) AS total
+		FROM fd_sys_calendar a 
+			LEFT JOIN (
+				SELECT 
+				h.tran_dttm,
+				h.net_volume_total,
+				h.correct_value,
+				b.capa_type,
+				b.conversion
+			FROM fd_tran_bulk_history h
+				LEFT JOIN fd_info_bulk b ON b.comp_id = h.comp_id AND b.bulk_id = h.bulk_id AND b.isDel = '0'
+			WHERE (h.charge_type = '2' OR h.charge_type = '3') AND h.isDisp='1' AND h.comp_id IN (${gcomp_id})
+			GROUP BY h.tran_dttm) z ON a.calendar_dt = DATE_FORMAT(z.tran_dttm, '%Y-%m-%d')
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m-%d') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 DAY, '%y-%m-%d') AND DATE_FORMAT(NOW() - INTERVAL 1 DAY, '%y-%m-%d')
+		GROUP BY a.calendar_dt;
+	</select>
+	
+	<select id="bulkMonthlyKg" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%y년%m월') AS tranDt,
+			IFNULL(COUNT(z.tran_dttm), 0) AS cnt, 
+			IFNULL(ROUND(SUM(case
+				when z.capa_type = 'SBKU0001' then (z.net_volume_total + z.correct_value)
+				when z.capa_type = 'SBKU0002' then ((z.net_volume_total + z.correct_value) * z.conversion)
+				ELSE (z.net_volume_total + z.correct_value)
+			END)), 0) AS total
+		FROM fd_sys_calendar a 
+			LEFT JOIN (
+				SELECT 
+				h.tran_dttm,
+				h.net_volume_total,
+				h.correct_value,
+				b.capa_type,
+				b.conversion
+			FROM fd_tran_bulk_history h
+				LEFT JOIN fd_info_bulk b ON b.comp_id = h.comp_id AND b.bulk_id = h.bulk_id AND b.isDel = '0'
+			WHERE (h.charge_type = '2' OR h.charge_type = '3') AND h.isDisp='1' AND h.comp_id IN (${gcomp_id})
+			GROUP BY h.tran_dttm) z ON a.calendar_dt = DATE_FORMAT(z.tran_dttm, '%Y-%m-%d')
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%y-%m') AND DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%y-%m')
+		GROUP BY DATE_FORMAT(a.calendar_dt, '%y-%m');
+	</select>
+	
+	<select id="bulkDailyLiter" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%m월%d일') AS tranDt,
+			IFNULL(COUNT(z.tran_dttm), 0) AS cnt, 
+			IFNULL(ROUND(SUM(case
+				when z.capa_type = 'SBKU0002' then (z.net_volume_total + z.correct_value)
+				when z.capa_type = 'SBKU0001' then ((z.net_volume_total + z.correct_value) / z.conversion)
+				ELSE (z.net_volume_total + z.correct_value)
+			END)), 0) AS total
+		FROM fd_sys_calendar a 
+			LEFT JOIN (
+				SELECT 
+				h.tran_dttm,
+				h.net_volume_total,
+				h.correct_value,
+				b.capa_type,
+				b.conversion
+			FROM fd_tran_bulk_history h
+				LEFT JOIN fd_info_bulk b ON b.comp_id = h.comp_id AND b.bulk_id = h.bulk_id AND b.isDel = '0'
+			WHERE (h.charge_type = '2' OR h.charge_type = '3') AND h.isDisp='1' AND h.comp_id IN (${gcomp_id})
+			GROUP BY h.tran_dttm) z ON a.calendar_dt = DATE_FORMAT(z.tran_dttm, '%Y-%m-%d')
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m-%d') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 DAY, '%y-%m-%d') AND DATE_FORMAT(NOW() - INTERVAL 1 DAY, '%y-%m-%d')
+		GROUP BY a.calendar_dt;
+	</select>
+	
+	<select id="bulkMonthlyLiter" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%y년%m월') AS tranDt,
+			IFNULL(COUNT(z.tran_dttm), 0) AS cnt, 
+			IFNULL(ROUND(SUM(case
+				when z.capa_type = 'SBKU0002' then (z.net_volume_total + z.correct_value)
+				when z.capa_type = 'SBKU0001' then ((z.net_volume_total + z.correct_value) / z.conversion)
+				ELSE (z.net_volume_total + z.correct_value)
+			END)), 0) AS total
+		FROM fd_sys_calendar a 
+			LEFT JOIN (
+				SELECT 
+				h.tran_dttm,
+				h.net_volume_total,
+				h.correct_value,
+				b.capa_type,
+				b.conversion
+			FROM fd_tran_bulk_history h
+				LEFT JOIN fd_info_bulk b ON b.comp_id = h.comp_id AND b.bulk_id = h.bulk_id AND b.isDel = '0'
+			WHERE (h.charge_type = '2' OR h.charge_type = '3') AND h.isDisp='1' AND h.comp_id IN (${gcomp_id})
+			GROUP BY h.tran_dttm) z ON a.calendar_dt = DATE_FORMAT(z.tran_dttm, '%Y-%m-%d')
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%y-%m') AND DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%y-%m')
+		GROUP BY DATE_FORMAT(a.calendar_dt, '%y-%m');
+	</select>
+	
+	<select id="bulkGps" resultType="HashMap">
+		SELECT 
+			b.bulk_id as bulkId,
+			DATE_FORMAT(g.tran_dttm, '%m-%d %T') AS tranDt,
+			b.bulk_name AS bulkName,
+			IFNULL(case
+				when DATE_FORMAT(g.tran_dttm, '%y-%m-%d') = DATE_FORMAT(NOW(), '%y-%m-%d') then g.latitude
+				ELSE '37.47'
+			END, '0') AS latitude,
+			IFNULL(case
+				when DATE_FORMAT(g.tran_dttm, '%y-%m-%d') = DATE_FORMAT(NOW(), '%y-%m-%d') then g.longitude
+				ELSE '126.88'
+			END, '0') AS longitude
+		FROM fd_device d
+				JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+				JOIN (
+					SELECT 
+						* 
+					FROM fd_info_bulk 
+					WHERE comp_id = #{comp_id} AND isDel = '0'
+		         
+			        UNION ALL
+			         
+			        SELECT 
+						a.*
+			        FROM fd_info_bulk a
+			            LEFT JOIN fd_device b ON b.device_id = a.device_id
+			        WHERE a.comp_id IN (${gcomp_id}) AND a.comp_id != #{comp_id} AND b.isShowUp = '1' AND a.isDel = '0'
+			         
+			        UNION ALL 
+			         
+			        SELECT 
+						a.* 
+					FROM fd_info_bulk a 
+					WHERE a.bulk_id IN (SELECT bulk_id FROM fd_share_bulk WHERE tagt_comp_id = #{comp_id} AND isUse = '1')
+						AND a.isDel = '0'
+				) b ON d.comp_id = b.comp_id AND d.device_id = b.device_id AND b.isDel = '0'
+				LEFT JOIN fd_tran_bulk_gps g ON b.bulk_id = g.bulk_id
+			WHERE DATE_FORMAT(g.tran_dttm, '%y-%m-%d') = DATE_FORMAT(NOW(), '%y-%m-%d') AND b.bulk_id = #{bulk_id}
+		GROUP BY g.tran_dttm
+		ORDER BY g.tran_dttm;
+	</select>
+	
+	<select id="bulkGpsTable" resultType="HashMap">
+		SELECT 
+			G1.bulk_id AS bulkId,
+			G1.bulk_name AS bulkName,
+			case
+				when DATE_FORMAT(G1.tran_dttm, '%y-%m-%d') = DATE_FORMAT(NOW(), '%y-%m-%d') then G2.latitude
+				ELSE '0'
+			END AS latitude,
+			case
+				when DATE_FORMAT(G1.tran_dttm, '%y-%m-%d') = DATE_FORMAT(NOW(), '%y-%m-%d') then G2.longitude
+				ELSE '0'
+			END AS longitude
+		FROM (
+			SELECT
+				b.bulk_id,
+				b.bulk_name,
+				MAX(g.tran_dttm) AS tran_dttm
+			FROM fd_device d
+				JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+				JOIN (
+					SELECT 
+						* 
+					FROM fd_info_bulk 
+					WHERE comp_id = #{comp_id} AND isDel = '0'
+		         
+			        UNION ALL
+			         
+			        SELECT 
+						a.*
+			        FROM fd_info_bulk a
+			            LEFT JOIN fd_device b ON b.device_id = a.device_id
+			        WHERE a.comp_id IN (${gcomp_id}) AND a.comp_id != #{comp_id} AND b.isShowUp = '1' AND a.isDel = '0'
+			         
+			        UNION ALL 
+			         
+			        SELECT 
+						a.* 
+					FROM fd_info_bulk a 
+					WHERE a.bulk_id IN (SELECT bulk_id FROM fd_share_bulk WHERE tagt_comp_id = #{comp_id} AND isUse = '1')   
+		         	AND a.isDel = '0'
+				) b ON d.comp_id = b.comp_id AND d.device_id = b.device_id AND b.isDel = '0'
+				LEFT JOIN fd_tran_bulk_gps g ON b.bulk_id = g.bulk_id
+			GROUP BY g.bulk_id
+			) G1
+			LEFT JOIN fd_tran_bulk_gps G2 ON G2.bulk_id = G1.bulk_id AND G2.tran_dttm = G1.tran_dttm
+		GROUP BY G1.bulk_name
+		ORDER BY G1.bulk_name;
+	</select>
+</mapper>

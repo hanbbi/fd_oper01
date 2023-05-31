@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.fd.mapper.MeterMapper">
+	<resultMap id="meterMap" type="MeterVO" autoMapping="true">
+		<id column="comp_id" property="compId"/>
+		<id column="device_id" property="deviceId"/>
+		<id column="meter_id" property="meterId"/>
+		<id column="adc_port" property="adcPort"/>
+		<id column="cust_id" property="custId"/>
+	</resultMap>
+	
+	<select id="meterDaily" resultType="HashMap">
+		SELECT
+			DATE_FORMAT(a.calendar_dt, '%m월%d일') AS tranDt,
+			e.diff_value AS used
+		FROM fd_sys_calendar a
+			LEFT JOIN (
+				SELECT 
+					m.tran_dt,
+					ROUND(SUM(m.diff_value)) AS diff_value
+				FROM fd_daliy_meter m
+				WHERE m.comp_id IN (${gcomp_id})
+					AND tran_dt BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 DAY, '%Y%m%d') AND DATE_FORMAT(NOW() - INTERVAL 1 DAY, '%Y%m%d')
+				GROUP BY m.tran_dt
+			) e ON e.tran_dt = a.calendar_dt
+		WHERE a.calendar_dt BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 DAY, '%Y-%m-%d') AND DATE_FORMAT(NOW() - INTERVAL 1 DAY, '%Y-%m-%d')
+		GROUP BY a.calendar_dt;
+	</select>
+	
+	<select id="meterMonthly" resultType="HashMap">
+		SELECT
+			DATE_FORMAT(a.calendar_dt, '%y년%m월') AS tranDt,
+			e.diff_value AS used
+		FROM fd_sys_calendar a
+			LEFT JOIN (
+				SELECT 
+					m.tran_dt,
+					ROUND(SUM(m.diff_value)) AS diff_value
+				FROM fd_daliy_meter m
+				WHERE m.comp_id IN (${gcomp_id})
+					AND tran_dt BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%Y%m01') AND LAST_DAY(NOW() - INTERVAL 1 MONTH)
+				GROUP BY DATE_FORMAT(m.tran_dt, '%Y%m')
+			) e ON e.tran_dt = a.calendar_dt
+		WHERE a.calendar_dt BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%Y-%m-01') AND LAST_DAY(NOW() - INTERVAL 1 MONTH)
+		GROUP BY DATE_FORMAT(a.calendar_dt, '%y년%m월');
+	</select>
+	
+	<select id="meterType" resultType="HashMap">
+		SELECT 
+			a.meterType AS meterType,
+			COUNT(a.meterType) AS cnt
+		FROM (
+			SELECT
+				IFNULL(com.code_nm, '기타') AS meterType,
+				com.sort AS sort
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+				JOIN fd_info_meter m ON cum.comp_id = m.comp_id AND cum.device_id = m.device_id AND m.isDel = '0'
+				LEFT JOIN fd_codemst com ON com.code_cd = cum.cust_mtr_type AND com.isUse = '1'
+			WHERE c.comp_id IN (${gcomp_id})
+			GROUP BY m.meter_id, m.adc_port
+		) a
+		GROUP BY a.meterType
+		ORDER BY a.sort;
+	</select>
+	
+	<select id="meterError" resultType="HashMap">
+		SELECT
+			mm.mtype AS mtype,
+			COUNT(mm.mtype) AS cnt
+		FROM (
+			SELECT 
+				'통신점검' AS mtype
+			FROM fd_tran_meter_history_lst h1
+				JOIN fd_info_meter m ON m.comp_id = h1.comp_id AND m.device_id = h1.device_id AND m.meter_id = h1.meter_id AND m.adc_port = h1.adc_port AND m.isDel = '0'
+			WHERE h1.comp_id IN (${gcomp_id}) AND h1.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW()
+				AND h1.tran_dttm BETWEEN DATE_ADD(NOW(), INTERVAL -6 MONTH) AND NOW()
+			
+			UNION ALL
+			
+			SELECT 
+				'미변동' AS mtype
+		    FROM fd_tran_meter_history h
+			   JOIN (
+			      SELECT em.comp_id, em.device_id, MAX(em.tran_dttm) tran_dttm, em.meter_id, em.adc_port, MIN(em.tran_dttm) min_tran_dttm
+			      FROM fd_extr_meter em
+			         LEFT JOIN fd_company_svc cs ON em.comp_id = cs.comp_id
+			      WHERE em.comp_id IN (${gcomp_id})
+			         AND em.tran_dt BETWEEN DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 168 HOUR),'%Y%m%d') 
+			         AND DATE_FORMAT(NOW(),'%Y%m%d')
+			      GROUP BY em.device_id, em.meter_id, em.adc_port
+			       HAVING SUM(diff_value) = 0 AND SUM(current_value) > 0 
+			   ) e ON e.comp_id = h.comp_id AND e.device_id = h.device_id AND e.meter_id = h.meter_id AND e.adc_port = h.adc_port AND e.tran_dttm = h.tran_dttm
+			   LEFT JOIN fd_company_svc cs ON cs.comp_id = #{comp_id}
+			   LEFT JOIN fd_info_meter me ON h.device_id = me.device_id AND h.meter_id = me.meter_id AND h.adc_port = me.adc_port
+		   WHERE TIMESTAMPDIFF(HOUR,e.min_tran_dttm, NOW()) >= 168 AND me.isEmpty = '0'
+			) mm
+		WHERE mm.mtype IS NOT NULL
+		GROUP BY mm.mtype;
+	</select>
+	
+	<select id="meterErrorT" resultType="HashMap">
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.current_value AS cValue
+		FROM fd_tran_meter_history_lst h
+			JOIN fd_device d ON d.comp_id = h.comp_id AND d.device_id = h.device_id
+			JOIN fd_company c ON c.comp_id = h.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = h.comp_id AND cum.device_id = h.device_id AND cum.isDel = '0'
+		WHERE h.comp_id IN (${gcomp_id}) AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW()
+			AND h.tran_dttm BETWEEN DATE_ADD(NOW(), INTERVAL -6 MONTH) AND NOW()
+		GROUP BY h.cust_id;
+	</select>
+	
+	<select id="meterErrorM" resultType="HashMap">
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.current_value AS cValue
+		FROM fd_tran_meter_history h
+			JOIN fd_device d ON d.comp_id = h.comp_id AND d.device_id = h.device_id
+			JOIN fd_company c ON c.comp_id = h.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.device_id = h.device_id AND cum.adc_port = h.adc_port AND cum.isDel = '0'
+		   JOIN (
+		      SELECT em.comp_id, em.device_id, MAX(em.tran_dttm) tran_dttm, em.meter_id, em.adc_port, MIN(em.tran_dttm) min_tran_dttm
+		      FROM fd_extr_meter em
+		         LEFT JOIN fd_company_svc cs ON em.comp_id = cs.comp_id
+		      WHERE em.comp_id IN (${gcomp_id})
+		         AND em.tran_dt BETWEEN DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 168 HOUR),'%Y%m%d') 
+		         AND DATE_FORMAT(NOW(),'%Y%m%d')
+		      GROUP BY em.device_id, em.meter_id, em.adc_port
+		       HAVING SUM(diff_value) = 0 AND SUM(current_value) > 0 
+		   ) e ON e.comp_id = h.comp_id AND e.device_id = h.device_id AND e.meter_id = h.meter_id AND e.adc_port = h.adc_port AND e.tran_dttm = h.tran_dttm
+		   LEFT JOIN fd_company_svc cs ON cs.comp_id = #{comp_id}
+		   LEFT JOIN fd_info_meter me ON h.device_id = me.device_id AND h.meter_id = me.meter_id AND h.adc_port = me.adc_port
+		WHERE TIMESTAMPDIFF(HOUR,e.min_tran_dttm, NOW()) >= 168 AND me.isEmpty = '0';
+	</select>
+</mapper>

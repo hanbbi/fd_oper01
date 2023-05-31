@@ -1,0 +1,416 @@
+var queryString = window.location.search;
+var urlParams = new URLSearchParams(queryString);
+var comp_id = urlParams.get('comp_id');
+	
+$(document).ready(function() {
+	console.log("printData.js loaded");
+	
+	$('#datepicker2').datepicker({
+	    format: 'yy-mm-dd', // 선택한 날짜 형식
+	    language: 'ko', // 한국어 설정
+	    autoclose: true, // 선택 후 자동으로 닫힘
+	    todayHighlight: true, // 현재 날짜 강조 표시
+	    endDate: new Date() // 오늘 날짜까지 선택 가능
+	});
+	
+	// 초기에 현재 날짜 선택
+	var today = new Date();
+	var year = today.getFullYear().toString().slice(-2); // 마지막 두 자리만 가져오기
+	var month = (today.getMonth() + 1).toString().padStart(2, '0'); // 두 자리로 만들기
+	var day = today.getDate().toString().padStart(2, '0'); // 두 자리로 만들기
+	
+	var formattedDate = year + '-' + month + '-' + day;
+
+	
+	// input 요소에 초기값 설정
+	var datepickerInput = document.getElementById('datepicker2');
+	datepickerInput.value = formattedDate;
+	datepickerInput.setAttribute('readonly', true);
+
+	
+	// 버튼 클릭 시 데이트피커 표시
+	$('#datepickerBtn2').click(function() {
+	    $('#datepicker2').datepicker('show');
+	});
+	
+	// 날짜 선택 시 input에 표시
+	$('#datepicker2').datepicker().on('changeDate', function(e) {
+		var year = e.date.getFullYear().toString().slice(-2); // 마지막 두 자리만 가져오기
+		var month = (e.date.getMonth() + 1).toString().padStart(2, '0'); // 두 자리로 만들기
+		var day = e.date.getDate().toString().padStart(2, '0'); // 두 자리로 만들기
+		
+		var selectedDate = year + '-' + month + '-' + day;
+    	$(this).val(selectedDate);
+    	
+    	console.log(selectedDate);
+	    
+		$.ajax({
+	        type: 'POST',
+	        url: '/tankStockText',
+	        data: {
+	            comp_id: new URLSearchParams(window.location.search).get('comp_id'),
+	            selectedDate: selectedDate
+	        },
+	        dataType: 'json',
+	        success: function(response) {
+				$('#tankText2').empty();
+				
+	           var data = response;
+	            var tankText2 = document.getElementById('tankText2')
+	            
+	            var tankAllLabel = document.createElement('label');
+	            var tankDrvLabel = document.createElement('label');
+	            var tankWeightLabel = document.createElement('label');
+	            var tankChargeLabel = document.createElement('label');
+	            var tankStockLabel = document.createElement('label');
+	            
+	            var tankAllInput = document.createElement('input');
+	            var tankDrvInput = document.createElement('input');
+	            var tankWeightInput = document.createElement('input');
+	            var tankChargeInput = document.createElement('input');
+	            var tankStockInput = document.createElement('input');
+	            
+	            tankAllLabel.textContent = '전체탱크수 :' || '';
+	            tankDrvLabel.textContent = '운영탱크수 :' || '';
+	            tankWeightLabel.textContent = '전체내용적 :' || '';
+	            tankChargeLabel.textContent = '충전가능량 :' || '';
+	            tankStockLabel.textContent = '현재재고량 :' || '';
+	            
+	            console.log(data.tnkDrv);
+	            console.log(data.total);
+	            
+	            tankAllInput.value = parseInt(data.tnkAll).toLocaleString() + " 대" || '';
+	            tankDrvInput.value = parseInt(data.tnkDrv).toLocaleString() + " 대" || '';
+	            tankWeightInput.value = parseInt(data.total).toLocaleString() + " KG" || '';
+	            tankChargeInput.value = parseInt(data.charge).toLocaleString() + " KG" || '';
+	            tankStockInput.value = parseInt(data.stock).toLocaleString() + " KG" || '';
+	            
+	            tankAllInput.setAttribute('readonly', true);
+				tankDrvInput.setAttribute('readonly', true);
+				tankWeightInput.setAttribute('readonly', true);
+				tankChargeInput.setAttribute('readonly', true);
+				tankStockInput.setAttribute('readonly', true);
+	
+	            
+	            tankAllLabel.appendChild(tankAllInput);
+	            tankDrvLabel.appendChild(tankDrvInput);
+	            tankWeightLabel.appendChild(tankWeightInput);
+	            tankChargeLabel.appendChild(tankChargeInput);
+	            tankStockLabel.appendChild(tankStockInput);
+	            
+	            tankText2.appendChild(tankAllLabel);
+	            tankText2.appendChild(tankDrvLabel);
+	            tankText2.appendChild(tankWeightLabel);
+	            tankText2.appendChild(tankChargeLabel);
+	            tankText2.appendChild(tankStockLabel);
+	                
+	            console.log(data);
+	            console.log(tankText2);
+	            
+	            var stockSpan1 = document.getElementById('stockSpan1')
+	            var stockSpan2 = document.getElementById('stockSpan2')
+	            var stockSpan3 = document.getElementById('stockSpan3')
+	            var stockSpan4 = document.getElementById('stockSpan4')
+	            
+	            stockSpan1.textContent = parseInt(data.tnkDrv).toLocaleString();
+	            stockSpan2.textContent = parseInt(data.total).toLocaleString();
+	            stockSpan3.textContent = parseInt(data.stock).toLocaleString();
+	            stockSpan4.textContent = parseInt(data.charge).toLocaleString();
+	            
+	            return tankText2;
+	        },
+	        error: function(error) {
+	            console.log("Error fetching data: ", error);
+	        }
+	    });
+	    
+	    $.ajax({
+			type: 'POST',
+			url: '/tankStock',
+			data: {
+				comp_id: comp_id,
+	        	selectedDate: selectedDate
+			},
+			dataType: 'json',
+			
+			success: function (response) {
+				var tnkData = {
+					stock: response.stock,
+					charge: response.charge,
+					tranDt: response.tranDt,
+					tnkAll: response.tnkAll,
+					tnkDrv: response.tnkDrv,
+					total: response.total
+				};
+				console.log(tnkData);
+				updateChart7(tnkData);
+			},
+			error: function (error) {
+				console.log("Error fetching data6: ", error);
+			},
+		});
+	});
+	
+	$.ajax({
+        type: 'POST',
+        url: '/tankStockText',
+        data: {
+            comp_id: comp_id,
+	        selectedDate: formattedDate
+        },
+        dataType: 'json',
+        success: function(response) {
+            var data = response;
+            var tankText2 = document.getElementById('tankText2')
+            
+            var tankAllLabel = document.createElement('label');
+            var tankDrvLabel = document.createElement('label');
+            var tankWeightLabel = document.createElement('label');
+            var tankChargeLabel = document.createElement('label');
+            var tankStockLabel = document.createElement('label');
+            
+            var tankAllInput = document.createElement('input');
+            var tankDrvInput = document.createElement('input');
+            var tankWeightInput = document.createElement('input');
+            var tankChargeInput = document.createElement('input');
+            var tankStockInput = document.createElement('input');
+            
+            tankAllLabel.textContent = '전체탱크수 :' || '';
+            tankDrvLabel.textContent = '운영탱크수 :' || '';
+            tankWeightLabel.textContent = '전체내용적 :' || '';
+            tankChargeLabel.textContent = '충전가능량 :' || '';
+            tankStockLabel.textContent = '현재재고량 :' || '';
+            
+            tankAllInput.value = parseInt(data.tnkAll).toLocaleString() + " 대" || '';
+            tankDrvInput.value = parseInt(data.tnkDrv).toLocaleString() + " 대" || '';
+            tankWeightInput.value = parseInt(data.total).toLocaleString() + " KG" || '';
+            tankChargeInput.value = parseInt(data.charge).toLocaleString() + " KG" || '';
+            tankStockInput.value = parseInt(data.stock).toLocaleString() + " KG" || '';
+            
+            tankAllInput.setAttribute('readonly', true);
+			tankDrvInput.setAttribute('readonly', true);
+			tankWeightInput.setAttribute('readonly', true);
+			tankChargeInput.setAttribute('readonly', true);
+			tankStockInput.setAttribute('readonly', true);
+
+            
+            tankAllLabel.appendChild(tankAllInput);
+            tankDrvLabel.appendChild(tankDrvInput);
+            tankWeightLabel.appendChild(tankWeightInput);
+            tankChargeLabel.appendChild(tankChargeInput);
+            tankStockLabel.appendChild(tankStockInput);
+            
+            tankText2.appendChild(tankAllLabel);
+            tankText2.appendChild(tankDrvLabel);
+            tankText2.appendChild(tankWeightLabel);
+            tankText2.appendChild(tankChargeLabel);
+            tankText2.appendChild(tankStockLabel);
+                
+            console.log(data);
+            console.log(tankText2);
+            
+            var stockSpan1 = document.getElementById('stockSpan1')
+            var stockSpan2 = document.getElementById('stockSpan2')
+            var stockSpan3 = document.getElementById('stockSpan3')
+            var stockSpan4 = document.getElementById('stockSpan4')
+            
+            stockSpan1.textContent = parseInt(data.tnkDrv).toLocaleString();
+            stockSpan2.textContent = parseInt(data.total).toLocaleString();
+            stockSpan3.textContent = parseInt(data.stock).toLocaleString();
+            stockSpan4.textContent = parseInt(data.charge).toLocaleString();
+            
+            var todayDate = document.getElementById('todayDate');
+            
+            todayDate.textContent = formattedDate + ' 기준';
+            
+            return tankText2;
+        },
+        error: function(error) {
+            console.log("Error fetching data: ", error);
+        }
+    });
+	
+	
+	function updateChart7(tnkData) {
+		google.charts.load('current', {'packages':['corechart']});
+	    google.charts.setOnLoadCallback(drawChart);
+	
+	    function drawChart() {
+	
+	        var data = new google.visualization.DataTable();
+	        data.addColumn('string', 'stock');
+	        data.addColumn('number', 'percent');
+	        data.addRows([
+	        	['충전 가능량', parseInt(tnkData.charge)],
+	        	['현재 재고량', parseInt(tnkData.stock)]
+        	]);
+        	
+        	console.log(parseInt(tnkData.charge));
+	
+	        var options = {
+	            title: '',
+			    sliceVisibilityThreshold: 0,
+			    pieSliceTextStyle: { fontSize: 18 },
+			    colors: ['#aadbfb', '#48b6fd'],
+			    annotations: {
+			        textStyle: {
+						color: 'black',
+			        	fontSize: 12
+			        }
+			    },
+			    tooltip: {
+					trigger: 'none'
+				}
+	        };
+	
+	        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+	        chart.draw(data, options);
+	      }
+	}
+	
+	function fetchData7() {
+		$.ajax({
+			type: 'POST',
+			url: '/tankStock',
+			data: {
+				comp_id: comp_id,
+	        	selectedDate: formattedDate
+			},
+			dataType: 'json',
+			
+			success: function (response) {
+				var tnkData = {
+					stock: response.stock,
+					charge: response.charge,
+					tranDt: response.tranDt,
+					tnkAll: response.tnkAll,
+					tnkDrv: response.tnkDrv,
+					total: response.total
+				};
+				console.log(tnkData);
+				updateChart7(tnkData);
+			},
+			error: function (error) {
+				console.log("Error fetching data6: ", error);
+			},
+		});
+	}
+	
+	fetchData7();
+	
+	$.ajax({
+        type: 'POST',
+        url: '/tankRemain',
+        data: {
+            comp_id: comp_id
+        },
+        dataType: 'json',
+        success: function(response) {
+            var data = response;
+            var tableBody = document.getElementById('printRemainTable').getElementsByTagName('tbody')[0];
+            
+            // 데이터 처리
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                var row = document.createElement('tr');
+                var remainCell = document.createElement('td');
+                var cntCell = document.createElement('td');
+                
+                remainCell.textContent = item.remain || '';
+                cntCell.textContent = parseInt(item.cnt).toLocaleString() || '';
+                
+                row.appendChild(remainCell);
+                row.appendChild(cntCell);
+                
+                tableBody.appendChild(row);
+            }
+            
+            console.log(tableBody);
+            
+            return tableBody;
+        },
+        error: function(error) {
+            console.log("Error fetching data: ", error);
+        }
+    });
+	
+    $.ajax({
+        type: 'POST',
+        url: '/tankWeight',
+        data: {
+            comp_id: comp_id
+        },
+        dataType: 'json',
+        success: function(response) {
+            var data = response;
+            var tableBody = document.getElementById('printWeightTable').getElementsByTagName('tbody')[0];
+            
+            // 데이터 처리
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                var row = document.createElement('tr');
+                var volumeCell = document.createElement('td');
+                var cntCell = document.createElement('td');
+                
+                volumeCell.textContent = item.volume || '';
+                cntCell.textContent = parseInt(item.cnt).toLocaleString() || '';
+                
+                row.appendChild(volumeCell);
+                row.appendChild(cntCell);
+                
+                tableBody.appendChild(row);
+            }
+            
+            console.log(tableBody);
+            
+            return tableBody;
+        },
+        error: function(error) {
+            console.log("Error fetching data: ", error);
+        }
+    });
+    
+    $.ajax({
+        type: 'POST',
+        url: '/tankManu',
+        data: {
+            comp_id: comp_id
+        },
+        dataType: 'json',
+        success: function(response) {
+            var data = response;
+            var tableBody = document.getElementById('printManuTable').getElementsByTagName('tbody')[0];
+            
+            // 데이터 처리
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                var row = document.createElement('tr');
+                var manufacturerCell = document.createElement('td');
+                var cntCell = document.createElement('td');
+                
+                manufacturerCell.textContent = item.manufacturer || '';
+                cntCell.textContent = parseInt(item.cnt).toLocaleString() || '';
+                
+                row.appendChild(manufacturerCell);
+                row.appendChild(cntCell);
+                
+                tableBody.appendChild(row);
+            }
+            
+            console.log(tableBody);
+            
+            return tableBody;
+        },
+        error: function(error) {
+            console.log("Error fetching data: ", error);
+        }
+    });
+	
+	
+	document.getElementById("printBtn2").addEventListener("click", function() {
+		window.print();
+	});
+});
+
+
+    

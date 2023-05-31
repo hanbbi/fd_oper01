@@ -1,0 +1,11 @@
+arguments=
+auto.sync=true
+eclipse.preferences.version=1
+experimental.module.support=false
+gradle.build.scans=false
+gradle.distribution=GRADLE_DISTRIBUTION(WRAPPER)
+gradle.offline.mode=false
+java.home=C\:\\Dev\\tools\\java\\openjdk\\openlogic-openjdk-8u282-b08-windows-64
+jvm.arguments=
+show.console.view=true
+show.executions.view=true

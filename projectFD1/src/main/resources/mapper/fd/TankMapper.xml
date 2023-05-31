@@ -1,0 +1,749 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.fd.mapper.TankMapper">
+	<resultMap id="tankMap" type="TankVO" autoMapping="true">
+		<id column="comp_id" property="compId"/>
+		<id column="tank_id" property="tankId"/>
+		<id column="device_id" property="deviceId"/>
+		<id column="cust_id" property="custId"/>
+		<result column="adc_port" property="adcPort"/>
+	</resultMap>
+	
+	<select id="tankStock" resultType="HashMap">
+		SELECT
+			DATE_FORMAT(TI.tran_dttm, '%y-%m-%d') AS tranDt,
+			(SELECT 
+				COUNT(*) 
+			FROM fd_device d 
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0'
+			WHERE c.root_id = #{comp_id}) AS tnkAll,
+			IFNULL(SUM(TI.drvtnk), 0) AS tnkDrv,
+			IFNULL(SUM(TI.total), 0) AS total,
+			IFNULL(SUM(TI.total) - ROUND(SUM(TI.intnk)), 0) AS charge,
+			IFNULL(ROUND(SUM(TI.intnk)), 0) AS stock
+		FROM (
+			SELECT
+				DATE_FORMAT(h1.tran_dttm, '%y-%m-%d') AS tran_dttm,
+				COUNT(h1.tank_id) AS drvtnk,
+				SUM(ROUND(h1.weight)) AS total,
+				SUM(case
+					when h1.adc_port = '1' then (h1.weight * h2.remain1_percent / 85)
+					when h1.adc_port = '2' then (h1.weight * h2.remain2_percent / 85)
+				END) AS intnk
+			FROM (
+				SELECT 
+					MAX(h.tran_dttm) AS tran_dttm,
+					t.tank_id,
+					t.weight,
+					t.adc_port,
+					t.comp_id,
+					t.device_id
+				FROM fd_device d
+					JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+					JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0'
+					JOIN fd_tran_tank_history h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+				WHERE c.comp_id = #{comp_id} AND DATE_FORMAT(h.tran_dttm, '%y-%m-%d') = #{selectedDate}
+				GROUP BY t.tank_id
+			) h1
+				JOIN fd_tran_tank_history h2 ON h2.tran_dttm = h1.tran_dttm AND h2.comp_id = h1.comp_id AND h2.device_id = h1.device_id
+			GROUP BY h1.tank_id
+			
+			UNION ALL 
+			
+			SELECT
+				DATE_FORMAT(h1.tran_dttm, '%y-%m-%d') AS tran_dttm,
+				COUNT(h1.tank_id) AS drvtnk,
+				SUM(ROUND(h1.weight)) AS total,
+				SUM(case
+					when h1.adc_port = '1' then (h1.weight * h2.remain1_percent / 85)
+					when h1.adc_port = '2' then (h1.weight * h2.remain2_percent / 85)
+				END) AS intnk
+			FROM (
+				SELECT 
+					MAX(h.tran_dttm) AS tran_dttm,
+					t.tank_id,
+					t.weight,
+					t.adc_port,
+					t.comp_id,
+					t.device_id
+				FROM fd_device d
+					JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+					JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0' AND t.isShowUp = '1'
+					JOIN fd_tran_tank_history h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+				WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id != #{comp_id} 
+					AND DATE_FORMAT(h.tran_dttm, '%y-%m-%d') = #{selectedDate}
+				GROUP BY t.tank_id
+			) h1
+				JOIN fd_tran_tank_history h2 ON h2.tran_dttm = h1.tran_dttm AND h2.comp_id = h1.comp_id AND h2.device_id = h1.device_id
+			GROUP BY h1.tank_id
+			
+			UNION ALL 
+			
+			SELECT
+				DATE_FORMAT(h1.tran_dttm, '%y-%m-%d') AS tran_dttm,
+				COUNT(h1.tank_id) AS drvtnk,
+				SUM(ROUND(h1.weight)) AS total,
+				SUM(case
+					when h1.adc_port = '1' then (h1.weight * h2.remain1_percent / 85)
+					when h1.adc_port = '2' then (h1.weight * h2.remain2_percent / 85)
+				END) AS intnk
+			FROM (
+				SELECT 
+					MAX(h.tran_dttm) AS tran_dttm,
+					t.tank_id,
+					t.weight,
+					t.adc_port,
+					t.comp_id,
+					t.device_id
+				FROM fd_device d
+					JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+					JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0'
+						AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE isUse = '1' AND tagt_comp_id = #{comp_id})
+					JOIN fd_tran_tank_history h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+				WHERE c.comp_id = #{comp_id} AND DATE_FORMAT(h.tran_dttm, '%y-%m-%d') = #{selectedDate}
+				GROUP BY t.tank_id
+			) h1
+				JOIN fd_tran_tank_history h2 ON h2.tran_dttm = h1.tran_dttm AND h2.comp_id = h1.comp_id AND h2.device_id = h1.device_id
+			GROUP BY h1.tank_id
+		) TI;
+	</select>
+	
+	<select id="tankWeight" resultType="HashMap">
+		SELECT
+			ranges.cnt AS volume,
+			COUNT(D1.tank_id) AS cnt
+		FROM (
+			SELECT 
+				t.tank_id,
+				case 
+					when t.weight &lt;= 100 then '0-100'
+					when t.weight &lt;= 200 then '-200'
+					when t.weight &lt;= 300 then '-300'
+					when t.weight &lt;= 400 then '-400'
+					when t.weight &lt;= 500 then '-500'
+					when t.weight &lt;= 1000 then '-1000'
+				    when t.weight &lt;= 2000 then '-2000'
+					when t.weight &lt;= 3000 then '-3000'
+					when t.weight > 3000 then '3001-'
+					ELSE '미등록'
+				END AS cnt,
+				case 
+					when t.weight &lt;= 100 then 1
+					when t.weight &lt;= 200 then 2
+					when t.weight &lt;= 300 then 3
+					when t.weight &lt;= 400 then 4
+					when t.weight &lt;= 500 then 5
+					when t.weight &lt;= 1000 then 6
+				    when t.weight &lt;= 2000 then 7
+					when t.weight &lt;= 3000 then 8
+					when t.weight > 3000 then 9
+					ELSE 0
+				END AS sort
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0'
+			WHERE c.comp_id = #{comp_id}
+			
+			UNION ALL 
+			
+			SELECT 
+				t.tank_id,
+				case 
+					when t.weight &lt;= 100 then '0-100'
+					when t.weight &lt;= 200 then '-200'
+					when t.weight &lt;= 300 then '-300'
+					when t.weight &lt;= 400 then '-400'
+					when t.weight &lt;= 500 then '-500'
+					when t.weight &lt;= 1000 then '-1000'
+				    when t.weight &lt;= 2000 then '-2000'
+					when t.weight &lt;= 3000 then '-3000'
+					when t.weight > 3000 then '3001-'
+					ELSE '미등록'
+				END AS cnt,
+				case 
+					when t.weight &lt;= 100 then 1
+					when t.weight &lt;= 200 then 2
+					when t.weight &lt;= 300 then 3
+					when t.weight &lt;= 400 then 4
+					when t.weight &lt;= 500 then 5
+					when t.weight &lt;= 1000 then 6
+				    when t.weight &lt;= 2000 then 7
+					when t.weight &lt;= 3000 then 8
+					when t.weight > 3000 then 9
+					ELSE 0
+				END AS sort
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0' AND t.isShowUp = '1'
+			WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id != #{comp_id}
+			
+			UNION ALL 
+			
+			SELECT 
+				t.tank_id,
+				case 
+					when t.weight &lt;= 100 then '0-100'
+					when t.weight &lt;= 200 then '-200'
+					when t.weight &lt;= 300 then '-300'
+					when t.weight &lt;= 400 then '-400'
+					when t.weight &lt;= 500 then '-500'
+					when t.weight &lt;= 1000 then '-1000'
+				    when t.weight &lt;= 2000 then '-2000'
+					when t.weight &lt;= 3000 then '-3000'
+					when t.weight > 3000 then '3001-'
+					ELSE '미등록'
+				END AS cnt,
+				case 
+					when t.weight &lt;= 100 then 1
+					when t.weight &lt;= 200 then 2
+					when t.weight &lt;= 300 then 3
+					when t.weight &lt;= 400 then 4
+					when t.weight &lt;= 500 then 5
+					when t.weight &lt;= 1000 then 6
+				    when t.weight &lt;= 2000 then 7
+					when t.weight &lt;= 3000 then 8
+					when t.weight > 3000 then 9
+					ELSE 0
+				END AS sort
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0'
+					AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE isUse = '1' AND tagt_comp_id = #{comp_id})
+			WHERE c.comp_id = #{comp_id}
+			) AS D1
+			RIGHT JOIN (
+			   SELECT '0-100' AS cnt, 1 AS sort
+			   	UNION ALL SELECT '-200', 2
+			    	UNION ALL SELECT '-300', 3
+			    	UNION ALL SELECT '-400', 4
+			    	UNION ALL SELECT '-500', 5
+			    	UNION ALL SELECT '-1000', 6
+			    	UNION ALL SELECT '-2000', 7
+			    	UNION ALL SELECT '-3000', 8
+			    	UNION ALL SELECT '3001-', 9
+			    	UNION ALL SELECT '미등록', 0
+				) AS ranges ON D1.cnt = ranges.cnt
+			GROUP BY ranges.cnt, ranges.sort
+			ORDER BY ranges.sort;
+	</select>
+	
+	<select id="tankRemain" resultType="HashMap">
+		SELECT
+			ranges.cnt AS remain,
+			COUNT(D1.tank_id) AS cnt
+		FROM (
+			SELECT 
+				t.tank_id,
+				case 
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 10 then '0-10'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 20 then '11-20'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 30 then '21-30'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 40 then '31-40'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 50 then '41-50'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 60 then '51-60'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 70 then '61-70'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 80 then '71-80'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) > 80 then '81-'
+					else '0-10'
+				END AS cnt
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+				JOIN fd_tran_tank_history_lst h ON t.comp_id = h.comp_id AND t.device_id = h.device_id
+			WHERE c.comp_id = #{comp_id}
+			GROUP BY t.tank_id
+			
+			UNION ALL 
+			
+			SELECT 
+				t.tank_id,
+				case 
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 10 then '0-10'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 20 then '11-20'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 30 then '21-30'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 40 then '31-40'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 50 then '41-50'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 60 then '51-60'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 70 then '61-70'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 80 then '71-80'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) > 80 then '81-'
+					else '0-10'
+				END AS cnt
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0' AND t.isShowUp = '1'
+				JOIN fd_tran_tank_history_lst h ON t.comp_id = h.comp_id AND t.device_id = h.device_id
+			WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id != #{comp_id}
+			GROUP BY t.tank_id
+			
+			UNION ALL 
+			
+			SELECT 
+				t.tank_id,
+				case 
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 10 then '0-10'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 20 then '11-20'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 30 then '21-30'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 40 then '31-40'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 50 then '41-50'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 60 then '51-60'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 70 then '61-70'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) &lt;= 80 then '71-80'
+					when if(t.adc_port = '1', h.remain1_percent, h.remain2_percent) > 80 then '81-'
+					else '0-10'
+				END AS cnt
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+					AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE isUse = '1' AND tagt_comp_id = #{comp_id})
+				JOIN fd_tran_tank_history_lst h ON t.comp_id = h.comp_id AND t.device_id = h.device_id
+			WHERE c.comp_id = #{comp_id}
+			GROUP BY t.tank_id
+			) D1
+		RIGHT JOIN (
+		   SELECT '0-10' AS cnt
+		   	UNION ALL SELECT '11-20'
+		    	UNION ALL SELECT '21-30'
+		    	UNION ALL SELECT '31-40'
+		    	UNION ALL SELECT '41-50'
+		    	UNION ALL SELECT '51-60'
+		    	UNION ALL SELECT '61-70'
+		    	UNION ALL SELECT '71-80'
+		    	UNION ALL SELECT '81-'
+			) AS ranges ON D1.cnt = ranges.cnt
+		GROUP BY ranges.cnt
+		ORDER BY ranges.cnt;
+	</select>
+	
+	<select id="tankManu" resultType="HashMap">
+		SELECT 
+			ranges.code_nm AS manufacturer,
+			COUNT(D1.tank_id) AS cnt
+		FROM (
+			SELECT
+				m.code_nm,
+				t.tank_id,
+				m.sort
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0'
+				JOIN fd_codemst m ON m.code_cd = t.manufacturer AND m.isUse = '1'
+			WHERE c.comp_id = #{comp_id}
+			GROUP BY t.tank_id
+			
+			UNION ALL 
+			
+			SELECT
+				m.code_nm,
+				t.tank_id,
+				m.sort
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0' AND t.isShowUp = '1'
+				JOIN fd_codemst m ON m.code_cd = t.manufacturer AND m.isUse = '1'
+			WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id != #{comp_id}
+			GROUP BY t.tank_id
+			
+			UNION ALL 
+			
+			SELECT
+				m.code_nm,
+				t.tank_id,
+				m.sort
+			FROM fd_device d
+				JOIN fd_company c ON d.comp_id = c.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON d.comp_id = t.comp_id AND d.device_id = t.device_id AND t.isDel = '0'
+					AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE tagt_comp_id = #{comp_id})
+				JOIN fd_codemst m ON m.code_cd = t.manufacturer AND m.isUse = '1'
+			WHERE c.comp_id = #{comp_id}
+			GROUP BY t.tank_id
+			) D1
+			RIGHT JOIN (
+			   SELECT 
+			   	code_nm
+			   FROM fd_codemst
+			   WHERE code_type = 'TMK'
+				) AS ranges ON D1.code_nm = ranges.code_nm
+			GROUP BY ranges.code_nm
+			ORDER BY COUNT(D1.tank_id) DESC;
+	</select>
+	
+	<select id="tankDaily" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%m월%d일') AS tranDt,
+			IFNULL(b.chargedcnt, '0') AS chargedCnt,
+			IFNULL(b.charged, '0') AS charged,
+			IFNULL(b.used, '0') AS used
+		FROM fd_sys_calendar a
+			LEFT JOIN (
+				SELECT 
+					ee.tran_dt AS tran_dt,
+					IFNULL(SUM(ee.isCharge), 0) as chargedcnt,
+					ABS(ROUND(SUM(case
+						when ee.isCharge = '1' AND t.adc_port = '1' then (t.weight * ee.diff1 / 85)
+						when ee.isCharge = '1' AND t.adc_port = '2' then (t.weight * ee.diff2 / 85)
+					END))) AS charged,
+					ROUND(SUM(case
+						when ee.isCharge = '0' AND t.adc_port = '1' then (t.weight * ee.diff1 / 85)
+						when ee.isCharge = '0' AND t.adc_port = '2' then (t.weight * ee.diff2 / 85)
+					END)) AS used
+				FROM fd_info_tank t
+					RIGHT JOIN (
+						SELECT 
+					   	e.comp_id,
+					   	e.device_id,
+							DATE_FORMAT(e.tran_dt, '%y-%m-%d') AS tran_dt, 
+							SUM(ifnull(e.diff1, 0)) AS diff1, 
+							SUM(ifnull(e.diff2, 0)) AS diff2, 
+							e.isCharge
+						FROM fd_extr_tank e
+						WHERE e.comp_id IN (${gcomp_id}) AND e.tran_type = 'T'
+							AND DATE_FORMAT(e.tran_dt, '%y-%m-%d') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 DAY, '%y-%m-%d') AND DATE_FORMAT(NOW() - INTERVAL 1 DAY, '%y-%m-%d')
+						GROUP BY e.device_id, e.tran_dt, e.isCharge
+						ORDER BY e.tran_dt, e.device_id
+					) ee ON ee.device_id = t.device_id
+				WHERE t.comp_id IN (${gcomp_id}) AND t.isDel = '0' AND t.isShowUp = '1'
+				GROUP BY ee.tran_dt
+			) b ON b.tran_dt = DATE_FORMAT(a.calendar_dt, '%y-%m-%d')
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m-%d') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 DAY, '%y-%m-%d') AND DATE_FORMAT(NOW() - INTERVAL 1 DAY, '%y-%m-%d')
+		GROUP BY DATE_FORMAT(a.calendar_dt, '%y-%m-%d');
+	</select>
+	
+	<select id="tankMonthly" resultType="HashMap">
+		SELECT 
+			DATE_FORMAT(a.calendar_dt, '%y년%m월') AS tranDt,
+			IFNULL(b.chargedcnt, '0') AS chargedCnt,
+			IFNULL(b.charged, '0') AS charged,
+			IFNULL(b.used, '0') AS used
+		FROM fd_sys_calendar a
+			LEFT JOIN (
+				SELECT 
+					DATE_FORMAT(ee.tran_dt, '%y-%m') AS tran_dt,
+					IFNULL(SUM(ee.isCharge), 0) AS chargedcnt,
+					ABS(ROUND(SUM(case
+						when ee.isCharge = '1' AND t.adc_port = '1' then (t.weight * ee.diff1 / 85)
+						when ee.isCharge = '1' AND t.adc_port = '2' then (t.weight * ee.diff2 / 85)
+					END))) AS charged,
+					ROUND(SUM(case
+						when ee.isCharge = '0' AND t.adc_port = '1' then (t.weight * ee.diff1 / 85)
+						when ee.isCharge = '0' AND t.adc_port = '2' then (t.weight * ee.diff2 / 85)
+					END)) AS used
+				FROM fd_info_tank t
+					RIGHT JOIN (
+					   SELECT 
+					   	e.comp_id,
+					   	e.device_id,
+							DATE_FORMAT(e.tran_dt, '%y-%m-%d') AS tran_dt, 
+							SUM(ifnull(e.diff1, 0)) AS diff1, 
+							SUM(ifnull(e.diff2, 0)) AS diff2, 
+							e.isCharge
+						FROM fd_extr_tank e
+						WHERE e.comp_id IN (${gcomp_id}) AND e.tran_type = 'T'
+							AND DATE_FORMAT(e.tran_dt, '%y-%m') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%y-%m') AND DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%y-%m')
+						GROUP BY e.device_id, e.tran_dt, e.isCharge
+						ORDER BY e.tran_dt, e.device_id
+				) ee ON ee.comp_id = t.comp_id AND ee.device_id = t.device_id
+				WHERE t.comp_id IN (${gcomp_id})
+		      AND t.isShowUp = '1'
+		      AND t.isDel = '0' 
+				GROUP BY DATE_FORMAT(ee.tran_dt, '%y-%m')
+			) b ON b.tran_dt = DATE_FORMAT(a.calendar_dt, '%y-%m')
+		WHERE DATE_FORMAT(a.calendar_dt, '%y-%m') BETWEEN DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%y-%m') AND DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%y-%m')
+		GROUP BY DATE_FORMAT(a.calendar_dt, '%y-%m');
+	</select>
+	
+	<select id="tankError" resultType="HashMap">
+		SELECT
+			tt.ttype AS ttype,
+			COUNT(tt.ttype) AS cnt
+		FROM (
+			SELECT 
+				case
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30) then '배터리점검'
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW()) then '통신점검'
+					when if (t.adc_port = '1', h.remain1_percent = 0, h.remain2_percent = 0) then '게이지점검'
+				END AS ttype
+			FROM fd_device d
+				JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+				JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+			WHERE c.comp_id = #{comp_id}
+				AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+			                      FROM fd_tran_tank_history h1
+			                      WHERE h1.device_id = h.device_id
+			                      ORDER BY h1.tran_dttm DESC
+			                      LIMIT 30) != 0
+			
+			UNION ALL 
+			
+			SELECT 
+				case
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30) then '배터리점검'
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW()) then '통신점검'
+					when if (t.adc_port = '1', h.remain1_percent = 0, h.remain2_percent = 0) then '게이지점검'
+				END AS ttype
+			FROM fd_device d
+				JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0' AND t.isShowUp = '1'
+				JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+			WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id != #{comp_id}
+				AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+			                      FROM fd_tran_tank_history h1
+			                      WHERE h1.device_id = h.device_id
+			                      ORDER BY h1.tran_dttm DESC
+			                      LIMIT 30) != 0
+			
+			UNION ALL 
+			
+			SELECT 
+				case
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30) then '배터리점검'
+					when (h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW()) then '통신점검'
+					when if (t.adc_port = '1', h.remain1_percent = 0, h.remain2_percent = 0) then '게이지점검'
+				END AS ttype
+			FROM fd_device d
+				JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+				JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+					AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE tagt_comp_id = #{comp_id})
+				JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+			WHERE c.comp_id = #{comp_id}
+				AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+			                      FROM fd_tran_tank_history h1
+			                      WHERE h1.device_id = h.device_id
+			                      ORDER BY h1.tran_dttm DESC
+			                      LIMIT 30) != 0
+			) tt
+		WHERE tt.ttype IS NOT NULL
+		GROUP BY tt.ttype
+		ORDER BY COUNT(tt.ttype) DESC;
+	</select>
+	
+	<select id="tankErrorB" resultType="HashMap">
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = cum.comp_id AND t.cust_id = cum.cust_id AND t.isDel = '0'
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id = #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id
+		
+		UNION ALL
+		
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = cum.comp_id AND t.cust_id = cum.cust_id AND t.isDel = '0' AND t.isShowUp = '1'
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id != #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id
+		
+		UNION ALL 
+		
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = cum.comp_id AND t.cust_id = cum.cust_id AND t.isDel = '0'
+				AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE tagt_comp_id = #{comp_id})
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id = #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent &lt; 30
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id;
+	</select>
+	
+	<select id="tankErrorT" resultType="HashMap">
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id =  #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent >= 30
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id
+		
+		UNION ALL 
+		
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0' AND t.isShowUp = '1'
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id !=  #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent >= 30
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id
+		
+		UNION ALL 
+		
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+				AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE tagt_comp_id =  #{comp_id})
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id =  #{comp_id} AND h.tran_dttm NOT BETWEEN DATE_ADD(NOW(), INTERVAL -25 HOUR) AND NOW() AND h.battery_percent >= 30
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id;
+	</select>
+	
+	<select id="tankErrorG" resultType="HashMap">
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id = #{comp_id} AND if(t.adc_port = '1', h.remain1_percent = 0, h.remain2_percent = 0)
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id
+		
+		UNION ALL 
+		
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0' AND t.isShowUp = '1'
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id IN (${gcomp_id}) AND c.comp_id != #{comp_id} AND if(t.adc_port = '1', h.remain1_percent = 0, h.remain2_percent = 0)
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id
+		
+		UNION ALL
+		
+		SELECT 
+			d.serial_no AS sn,
+			c.comp_nm AS comp,
+			cum.cust_nm AS cust,
+			DATE_FORMAT(h.tran_dttm, '%Y-%m-%d %T') AS tranDt,
+			h.battery_percent AS battery,
+			IFNULL(case
+				when t.adc_port = '1' then h.remain1_percent
+				when t.adc_port = '2' then h.remain2_percent
+			END, '0') AS remain
+		FROM fd_device d
+			JOIN fd_company c ON c.comp_id = d.comp_id AND c.isUse = '1'
+			JOIN fd_custmst cum ON cum.comp_id = d.comp_id AND cum.device_id = d.device_id AND cum.isDel = '0'
+			JOIN fd_info_tank t ON t.comp_id = d.comp_id AND t.device_id = d.device_id AND t.isDel = '0'
+				AND t.tank_id IN (SELECT tank_id FROM fd_share_tank WHERE tagt_comp_id = #{comp_id})
+			JOIN fd_tran_tank_history_lst h ON h.comp_id = t.comp_id AND h.device_id = t.device_id AND h.tran_type = 'T'
+		WHERE c.comp_id = #{comp_id} AND if(t.adc_port = '1', h.remain1_percent = 0, h.remain2_percent = 0)
+			AND (SELECT IF(d.serial_no LIKE '%K%', AVG(IFNULL(h1.remain1_percent,0)+IFNULL(h1.remain2_percent,0)), 1)
+		                      FROM fd_tran_tank_history h1
+		                      WHERE h1.device_id = h.device_id
+		                      ORDER BY h1.tran_dttm DESC
+		                      LIMIT 30) != 0
+		GROUP BY t.tank_id;
+	</select>
+</mapper>

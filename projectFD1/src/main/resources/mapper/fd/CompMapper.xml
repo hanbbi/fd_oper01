@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.fd.mapper.CompMapper">
+	<resultMap id="compMap" type="CompVO" autoMapping="true">
+		<id column="comp_id" property="compId"/>
+		<id column="prev_id" property="prevId"/>
+		<id column="root_id" property="rootId"/>
+		<result column="comp_nm" property="compNm"/>
+		<result column="ceo_nm" property="ceoNm"/>
+		<result column="comp_phone" property="compPhone"/>
+		<result column="address" property="address"/>
+		<result column="isUse" property="isUse"/>
+	</resultMap>
+	
+	<select id="selectByCompId" resultMap="compMap">
+		SELECT * FROM fd_company WHERE comp_id = #{compId}
+	</select>
+	
+	<select id="listAll" resultMap="compMap">
+		SELECT * FROM fd_company WHERE comp_id LIKE '1%' AND comp_id != 10000 AND isUse='1' ORDER BY comp_id
+	</select>
+	
+	<select id="compMap" resultType="HashMap">
+		SELECT * FROM fd_company WHERE comp_id LIKE '1%' AND comp_id != 10000 AND isUse='1' ORDER BY comp_id
+	</select>
+	
+	<select id="testMap" resultType="HashMap">
+		SELECT 1
+	</select>
+	
+	<select id="fnCompany" resultType="String">
+		SELECT fn_company(#{comp_id})
+	</select>
+</mapper>

@@ -1,0 +1,1108 @@
+/********** Template CSS **********/
+:root {
+	--primary: #009CFF;
+	--light: #F3F6F9;
+	--dark: #191C24;
+}
+
+.back-to-top {
+	position: fixed;
+	display: none;
+	right: 30px;
+	bottom: 15px;
+	z-index: 99;
+}
+
+/*** Spinner ***/
+#spinner {
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity .5s ease-out, visibility 0s linear .5s;
+	z-index: 99999;
+}
+
+#spinner.show {
+	transition: opacity .5s ease-out, visibility 0s linear 0s;
+	visibility: visible;
+	opacity: 1;
+}
+
+/*** Button ***/
+.btn {
+	transition: .5s;
+}
+
+.btn.btn-primary {
+	color: #FFFFFF;
+}
+
+.btn-square {
+	width: 38px;
+	height: 38px;
+}
+
+.btn-sm-square {
+	width: 32px;
+	height: 32px;
+}
+
+.btn-lg-square {
+	width: 48px;
+	height: 48px;
+}
+
+.btn-square, .btn-sm-square, .btn-lg-square {
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: normal;
+	border-radius: 50px;
+}
+
+/*** Layout ***/
+.sidebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 250px;
+	height: 100vh;
+	overflow-y: auto;
+	background: var(--light);
+	transition: 0.5s;
+	z-index: 999;
+}
+
+.content {
+	margin-left: 250px;
+	min-height: 100vh;
+	background: #FFFFFF;
+	transition: 0.5s;
+}
+
+@media ( min-width : 992px) {
+	.sidebar {
+		margin-left: 0;
+	}
+	.sidebar.open {
+		margin-left: -250px;
+	}
+	.content {
+		width: calc(100% - 250px);
+	}
+	.content.open {
+		width: 100%;
+		margin-left: 0;
+	}
+}
+
+@media ( max-width : 991.98px) {
+	.sidebar {
+		margin-left: -250px;
+	}
+	.sidebar.open {
+		margin-left: 0;
+	}
+	.content {
+		width: 100%;
+		margin-left: 0;
+	}
+}
+
+/*** Navbar ***/
+.sidebar .navbar .navbar-nav .nav-link {
+	padding: 7px 20px;
+	color: var(--dark);
+	font-weight: 500;
+	border-left: 3px solid var(--light);
+	border-radius: 0 30px 30px 0;
+	outline: none;
+}
+
+.sidebar .navbar .navbar-nav .nav-link:hover, .sidebar .navbar .navbar-nav .nav-link.active
+	{
+	color: var(--primary);
+	background: #FFFFFF;
+	border-color: var(--primary);
+}
+
+.sidebar .navbar .navbar-nav .nav-link i {
+	width: 40px;
+	height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: #FFFFFF;
+	border-radius: 40px;
+}
+
+.sidebar .navbar .navbar-nav .nav-link:hover i, .sidebar .navbar .navbar-nav .nav-link.active i
+	{
+	background: var(--light);
+}
+
+.sidebar .navbar .dropdown-toggle::after {
+	position: absolute;
+	top: 15px;
+	right: 15px;
+	border: none;
+	content: "\f107";
+	font-family: "Font Awesome 5 Free";
+	font-weight: 900;
+	transition: .5s;
+}
+
+.sidebar .navbar .dropdown-toggle[aria-expanded=true]::after {
+	transform: rotate(-180deg);
+}
+
+.sidebar .navbar .dropdown-item {
+	padding-left: 25px;
+	border-radius: 0 30px 30px 0;
+}
+
+.content .navbar .navbar-nav .nav-link {
+	margin-left: 25px;
+	padding: 12px 0;
+	color: var(--dark);
+	outline: none;
+}
+
+.content .navbar .navbar-nav .nav-link:hover, .content .navbar .navbar-nav .nav-link.active
+	{
+	color: var(--primary);
+}
+
+.content .navbar .sidebar-toggler, .content .navbar .navbar-nav .nav-link i
+	{
+	width: 40px;
+	height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: #FFFFFF;
+	border-radius: 40px;
+}
+
+.content .navbar .dropdown-toggle::after {
+	margin-left: 6px;
+	vertical-align: middle;
+	border: none;
+	content: "\f107";
+	font-family: "Font Awesome 5 Free";
+	font-weight: 900;
+	transition: .5s;
+}
+
+.content .navbar .dropdown-toggle[aria-expanded=true]::after {
+	transform: rotate(-180deg);
+}
+
+@media ( max-width : 575.98px) {
+	.content .navbar .navbar-nav .nav-link {
+		margin-left: 15px;
+	}
+}
+
+/*** Date Picker ***/
+.bootstrap-datetimepicker-widget.bottom {
+	top: auto !important;
+}
+
+.bootstrap-datetimepicker-widget .table * {
+	border-bottom-width: 0px;
+}
+
+.bootstrap-datetimepicker-widget .table th {
+	font-weight: 500;
+}
+
+.bootstrap-datetimepicker-widget.dropdown-menu {
+	padding: 10px;
+	border-radius: 2px;
+}
+
+.bootstrap-datetimepicker-widget table td.active,
+	.bootstrap-datetimepicker-widget table td.active:hover {
+	background: var(--primary);
+}
+
+.bootstrap-datetimepicker-widget table td.today::before {
+	border-bottom-color: var(--primary);
+}
+
+/*** Testimonial ***/
+.progress .progress-bar {
+	width: 0px;
+	transition: 2s;
+}
+
+/*** Testimonial ***/
+.testimonial-carousel .owl-dots {
+	margin-top: 24px;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+}
+
+.testimonial-carousel .owl-dot {
+	position: relative;
+	display: inline-block;
+	margin: 0 5px;
+	width: 15px;
+	height: 15px;
+	border: 5px solid var(--primary);
+	border-radius: 15px;
+	transition: .5s;
+}
+
+.testimonial-carousel .owl-dot.active {
+	background: var(--dark);
+	border-color: var(--primary);
+}
+
+#tank-chart1 {
+	width: 100%;
+    height: 100%;
+}
+
+#tank-chart2 {
+	width: 560px;
+	height: 220px;
+}
+
+#tank-chart22 {
+	width: 560px;
+	height: 220px;
+}
+
+#chartContainer {
+	background-color: #f3f6f9;
+}
+
+#chart1Div {
+    position: relative;
+    z-index: 1;
+    background-color: #f3f6f9;
+}
+
+#switcher-bar-chart {
+	width: 440px;
+	height: 440px;
+}
+
+#switcher-line-chart {
+	width: 600px;
+	height: 220px;
+}
+
+#switcher-line-chart2 {
+	width: 600px;
+	height: 220px;
+}
+
+#meter-line-chart {
+	width: 440px;
+	height: 220px;
+}
+
+#meter-line-chart2 {
+	width: 440px;
+	height: 220px;
+}
+
+#bulk-line-chart {
+	width: 440px;
+	height: 220px;
+}
+
+#bulk-line-chart2 {
+	width: 440px;
+	height: 220px;
+}
+
+
+/** 탱크 재고 **/
+
+.tankCol {
+	display: flex;
+    align-items: center;
+}
+
+#tankText {
+	width: 250px;
+    position: absolute;
+    top: 12%;
+    left: 2%;
+    z-index: 2;
+}
+
+#tankText input {
+	margin-bottom: 5px;
+	margin-left: 10px;
+	padding: 5px 7px 5px 10px;
+	width: 150px;
+	border: 0;
+	outline: none;
+	border-radius: 15px;
+}
+
+#datepicker {
+	text-align: center;
+	width: 110px;
+	height: 30px;
+	border: 0;
+	border-radius: 10px;
+	outline: none;
+	background: #e4eef8;
+}
+
+
+/** 탱크 용량별/잔량별/제조사별 테이블 **/
+
+#tankWeight, #tankRemain, #tankManu {
+	text-align: center;
+}
+
+#tankWeight tr th, #tankRemain tr th, #tankManu tr th {
+	background: #e4eef8;
+}
+
+th {
+	position: sticky;
+	top: 0px;
+}
+
+
+/** 소형저장탱크 충전량 및 소비량 테이블 **/
+
+#tankDailyTable {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+	height: 115px;
+}
+
+:not(#bulkGpsDiv)::-webkit-scrollbar {
+    display: none;
+}
+
+#tankDailyTable tr {
+	display: block;
+	float: left;
+}
+
+#tankDailyTable th, #tankDailyTable td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#tankDailyTable th {
+	margin-left: 80px;
+	width: 120px;
+}
+
+#tankDailyTable td {
+	width: 102px;
+}
+
+#tankChargeP {
+	position: relative;
+	top: 8px;
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 6px;
+	border-radius: 2px;
+	background: rgba(0, 156, 255, .7);
+}
+
+#tankUsedP {
+	position: relative;
+	top: 8px;
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 6px;
+	border-radius: 2px;
+	background: rgba(0, 156, 255, .3);
+}
+
+.tank-text {
+	position: relative;
+	top: -5px;
+}
+
+#tankDailyData {
+	display: flex;
+}
+
+#tankMonthlyTable {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+	height: 115px;
+}
+
+#tankMonthlyTable tr {
+	display: block;
+	float: left;
+}
+
+#tankMonthlyTable th, #tankMonthlyTable td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#tankMonthlyTable th {
+	margin-left: 80px;
+	width: 120px;
+}
+
+#tankMonthlyTable td {
+	width: 102px;
+}
+
+#tankMonthlyData {
+	display: flex;
+}
+
+
+/** 탱크 장애 **/
+#tankError {
+	text-align: center;
+	font-size: 18px;
+}
+
+#tankError tr th {
+	background: #f3f6f9;
+}
+
+#tankErrorData:hover {
+	cursor: pointer;
+}
+
+#tankErrorDetail {
+	text-align: center;
+	font-size: 15px;
+}
+
+#tankErrorDetail tr th {
+	background: #f3f6f9;
+}
+
+
+/** 용기 용량별 테이블 **/
+
+#switcherVolumeTable {
+	text-align: center;
+}
+
+#switcherVolumeTable tr th {
+	background: #e4eef8;
+}
+
+
+/** 용기 교체수량 테이블 **/
+
+#switcherDailyTable {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+	height: 115px;
+	margin-top: 5px;
+}
+
+#switcherDailyTable tr {
+	display: block;
+	float: left;
+}
+
+#switcherDailyTable th, #switcherDailyTable td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#switcherDailyTable th {
+	width: 100px;
+}
+
+#switcherDailyTable td {
+	width: 140px;
+}
+
+#switcherDailyData {
+	display: flex;
+}
+
+#switcherMonthlyTable {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+	height: 115px;
+	margin-top: 5px;
+}
+
+#switcherMonthlyTable tr {
+	display: block;
+	float: left;
+}
+
+#switcherMonthlyTable th, #switcherMonthlyTable td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#switcherMonthlyTable th {
+	width: 100px;
+}
+
+#switcherMonthlyTable td {
+	width: 140px;
+}
+
+#switcherMonthlyData {
+	display: flex;
+}
+
+#switcherCntP {
+	position: relative;
+	top: 8px;
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 6px;
+	border-radius: 2px;
+	background: rgba(0, 156, 255, .5);
+}
+
+.switcher-text {
+	position: relative;
+	top: -5px;
+}
+
+
+/** 용기 장애 **/
+#switcherError {
+	text-align: center;
+	font-size: 18px;
+}
+
+#switcherError tr th {
+	background: #f3f6f9;
+}
+
+
+#switcherErrorData:hover {
+	cursor: pointer;
+}
+
+#switcherErrorDetail {
+	text-align: center;
+	font-size: 15px;
+}
+
+#switcherErrorDetail tr th {
+	background: #f3f6f9;
+}
+
+
+
+/** 계량기 사용량 테이블 **/
+
+#meterDailyTable {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+}
+
+#meterDailyTable tr {
+	display: block;
+	float: left;
+}
+
+#meterDailyTable th, #meterDailyTable td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#meterDailyTable td {
+	width: 82px;
+}
+
+#meterDailyData {
+	display: flex;
+}
+
+#meterMonthlyTable {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+	height: 115px;
+}
+
+#meterMonthlyTable tr {
+	display: block;
+	float: left;
+}
+
+#meterMonthlyTable th, #meterMonthlyTable td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#meterMonthlyTable td {
+	width: 82px;
+}
+
+#meterMonthlyData {
+	display: flex;
+}
+
+#meterCntP {
+	position: relative;
+	top: 8px;
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 6px;
+	border-radius: 2px;
+	background: rgba(0, 156, 255, .5);
+}
+
+.meter-text {
+	position: relative;
+	top: -5px;
+}
+
+
+/** 타입별 계량기 테이블 **/
+
+#meterType {
+	text-align: center;
+}
+
+#meterType tr th {
+	background: #e4eef8;
+}
+
+
+/** 계량기 장애 **/
+#meterError {
+	text-align: center;
+	font-size: 18px;
+}
+
+#meterError tr th {
+	background: #f3f6f9;
+}
+
+#meterErrorData:hover {
+	cursor: pointer;
+}
+
+#meterErrorDetail {
+	text-align: center;
+	font-size: 15px;
+}
+
+#meterErrorDetail tr th {
+	background: #f3f6f9;
+}
+
+
+/** 벌크로리 공급량 테이블 **/
+
+#bulkDailyTableKg {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+	height: 115px;
+}
+
+#bulkDailyTableKg tr {
+	display: block;
+	float: left;
+}
+
+#bulkDailyTableKg th, #bulkDailyTableKg td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#bulkDailyTableKg td {
+	width: 81px;
+}
+
+#bulkDailyDataKg {
+	display: flex;
+}
+
+#bulkMonthlyTableKg {
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+	height: 115px;
+}
+
+#bulkMonthlyTableKg tr {
+	display: block;
+	float: left;
+}
+
+#bulkMonthlyTableKg th, #bulkMonthlyTableKg td {
+	display: block;
+	text-align: center;
+	height: 39px;
+}
+
+#bulkMonthlyTableKg td {
+	width: 81px;
+}
+
+#bulkMonthlyDataKg {
+	display: flex;
+}
+
+#bulkCntP {
+	position: relative;
+	top: 8px;
+	content: '';
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 6px;
+	border-radius: 2px;
+	background: rgba(0, 156, 255, .5);
+}
+
+.bulk-text {
+	position: relative;
+	top: -5px;
+}
+
+
+/** 벌크로리 GPS 테이블 **/
+
+#bulkGps {
+    position: relative;
+    z-index: 1;
+}
+
+#bulkGpsTable thead tr th {
+	background: #f3f6f9;
+}
+
+#bulkGpsData tr {
+	cursor: pointer;
+}
+
+#bulkGpsData tr td:first-child {
+	width: 90px;
+}
+
+
+/** 프린트 **/
+
+#datepicker2 {
+	text-align: center;
+	width: 110px;
+	height: 30px;
+	border: 0;
+	border-radius: 10px;
+	outline: none;
+	background: #e4eef8;
+	font-size: 18px;
+}
+
+.row2 {
+    width: 100%;
+    display: table;
+}
+
+.box {
+	display: table-cell;
+	border-bottom: 1px solid #999999;
+	padding: 4px;
+	height: 40px;
+}
+
+.box-a { 
+	background: #82A2D4; 
+	width: 150px;
+	color: #000000;
+	text-align: center; 
+}
+
+.box-b { 
+	width: 200px;
+	background: #FFFFFF;
+	text-align:center 
+}
+
+.box-c { 
+	width: 150px;
+	text-align: right; 
+}
+
+.left-box {
+  float: left;
+  width: 30%;
+}
+
+.right-box {
+  float: right;
+  width: 70%;
+}
+
+#tankText2 {
+	margin-top: 20px;
+	width: 300px;
+	font-size: 16px;
+	color: black;
+    z-index: 2;
+}
+
+#tankText2 input {
+	margin-bottom: 5px;
+	margin-left: 10px;
+	padding-left: 5px;
+	width: 120px;
+	border: 0;
+	outline: none;
+	background: #e4eef8;
+}
+
+#tankText3 {
+	position: absolute;
+    z-index: 2;
+    top: 40%;
+    width: 770px;
+}
+
+#piechart {
+    position: relative;
+    z-index: 1;
+    top: 10px;
+}
+
+#printRemainTable {
+	table-layout: fixed;
+	border-collapse: collapse;
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+}
+
+#printRemainTable tr {
+	display: block;
+	float: left;
+}
+
+#printRemainTable th, #printRemainTable td {
+	display: block;
+	border: 1px solid #444444;
+	text-align: center;
+}
+
+#printRemainTable th {
+	width: 80px;
+}
+
+#printRemainTable td {
+	width: 75.5px;
+}
+
+#printRemainData tr td:first-child, 
+#printRemainTable thead tr th:first-child {
+	background: #616FC0;
+	color: black;
+}
+
+#printRemainData {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+#printWeightTable {
+	table-layout: fixed;
+	border-collapse: collapse;
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 15px;
+}
+
+#printWeightTable tr {
+	display: block;
+	float: left;
+}
+
+#printWeightTable th {
+	width: 80px;
+}
+
+#printWeightTable td {
+	width: 68px;
+}
+
+#printWeightTable th, #printWeightTable td {
+	display: block;
+	border: 1px solid #444444;
+	text-align: center;
+}
+
+#printWeightData tr td:first-child, 
+#printWeightTable thead tr th:first-child {
+	background: #D5945B;
+	color: black;
+}
+
+#printWeightData {
+	display: flex;
+}
+
+#printManuTable {
+	width: 100%;
+	border-collapse: collapse;
+	display:flex;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	overflow-x: auto;
+	overflow-y: hidden;
+	font-size: 12px;
+}
+
+#printManuTable tr {
+	display: block;
+	float: left;
+}
+
+#printManuTable th, #printManuTable td {
+	display: block;
+	border: 1px solid #444444;
+	text-align: center;
+}
+
+#printManuTable th {
+	width: 80px;
+}
+
+#printManuTable td {
+	width: 58.4px;
+}
+
+#printManuData tr td:first-child, 
+#printManuTable thead tr th:first-child {
+	background: #62A461;
+	color: black;
+	height: 70px;
+}
+
+#printManuData {
+	display: flex;
+}
+
+.subText {
+	margin-top: 20px;
+}
+
+
+@media (min-width: 961px) and (max-width: 1892px) {
+	#detailCol1,
+	#detailCol2,
+	#detailCol3,
+	#detailCol4,
+	#detailCol5,
+	#detailCol6 {
+		width: 100%;
+	}
+
+	#tankText {
+		width: 230px;
+	    position: absolute;
+	    top: 6%;
+	    left: 2%;
+	    z-index: 2;
+	}
+}
+
+@media (max-width: 960px) {
+	#detailCol1 {
+		height: auto;
+	}
+	
+	#detailCol1 .row,
+	#detailCol3 .row,
+	#detailCol5 .row,
+	#detailCol6 .row {
+		display: flex;
+	    flex-direction: column;
+		height: auto;
+	}
+	
+
+	#detailCol1-1,
+	#detailCol1-2,
+	#detailCol2,
+	#detailCol3-1,
+	#detailCol3-2,
+	#detailCol4,
+	#detailCol5-1,
+	#detailCol5-2,
+	#detailCol6-1,
+	#detailCol6-2 {
+		width: 100%;
+		height: 470px;
+	}
+
+	#tankText {
+		width: 230px;
+	    position: absolute;
+	    top: 6%;
+	    left: 2%;
+	    z-index: 2;
+	    
+	}
+}
